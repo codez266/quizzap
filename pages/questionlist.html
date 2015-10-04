@@ -1,0 +1,5 @@
+    <div class="questions" ng-controller="QuestionListCtrl as qctrl">
+      <div class="question" ng-repeat="question in qctrl.questions">
+      	<span><a href="#/questions/q{{question.q_id}}">Question {{$index}}</a></span>
+      </div>
+    </div>

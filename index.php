@@ -2,9 +2,6 @@
 require 'vendor/autoload.php';
 require_once 'dbcon.php';
 include_once( 'classes/messages.php' );
-//require_once 'classes/DB.php';
-/*require 'vendor/slim/slim/Slim/Slim-Extras/Views/Mustache.php';
-\Slim\Extras\Views\Mustache::$mustacheDirectory = 'vendor/mustache/mustache/';*/
 spl_autoload_register( function( $class ) {
 		require_once 'classes/' . $class . '.php';
 	});
@@ -22,14 +19,18 @@ $app->container->singleton('db', function () {
 } );
 $app->add( $auth );
 //$app = new \Slim\Slim();
-$app->get('/', function () {
-	echo "Hello";
-});
+$app->get( '/', 'Routes:getProfile' );
 $app->get( '/login', 'Routes:getLogin')->name("login");
 
 $app->post( '/profile', 'Routes:postProfile')->name("profile");
 
-$app->get( '/profile', 'Routes:getProfile')->name("profileget");;
+$app->get( '/profile', 'Routes:getProfile')->name("profileget");
+
+$app->get( '/userdata', 'Routes:getProfileData');
+
+$app->get( '/questions', 'Routes:getQuestions');
+
+$app->get( '/questions/:id', 'Routes:getQuestion');
 
 $app->get( '/init', 'Routes:getInit');
 

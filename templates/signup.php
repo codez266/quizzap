@@ -8,7 +8,7 @@
 	<div class="err">
 			<?php
 			if( isset( $_SESSION['err'] ) ) {
-			echo $_SESSION['err'];
+			var_dump ($_SESSION['err']);
 			unset( $_SESSION['err'] );
 			}
 			?></div>

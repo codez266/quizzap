@@ -33,9 +33,10 @@ class User {
 		$user = self::$_fields[0];
 		$query = "SELECT * from `user` where username=? OR roll=?";
 		$db = DB::getInstance( 'Config' );
-		$name = $data[0];
+		// Get username and roll No. and check if unique
+		$username = $data[1];
 		$roll = $data[2];
-		$db->query( $query , array( $name, $roll ) );
+		$db->query( $query , array( $username, $roll ) );
 		if ( $db->getCount() > 0 ) {
 			return USER_EXISTS;
 		}
@@ -44,12 +45,12 @@ class User {
 		$data[5] = $hash;
 		$db->insert( "user", self::$_fields , $data );
 		if ( $db->getError() != false ) {
-			return $db->getErrorInfo();
+			return $db->getErrorInfo()[0];
 		}
 		return true;
 	}
 	public function loadFromDb( $username, $password ) {
-		$query = "SELECT * from `user` where username=?";
+		$query = "SELECT t1.u_id,t1.username,t1.pass,t1.roll,t2.t_score,t2.level,t2.hints_used,t2.l_score from `user` t1 LEFT JOIN `user_data` t2 ON t1.u_id=t2.u_id where username=?";
 		$db = DB::getInstance( 'Config' );
 		$db->query( $query , array( $username ) );
 		if ( $db->getError() === true || $db->getCount() == 0 ) {
