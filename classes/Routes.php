@@ -139,13 +139,17 @@ class Routes {
 		$req = $app->request;
 		$user = $_SESSION['user'];
 
-		$res = array(
+        $query = "SELECT t_score,l_score,level FROM user_data WHERE u_id=?";
+        $db = DB::getInstance( 'Config' );
+        $db->query( $query, array( $user['u_id'] ) );
+        $res = $db->getResult()[0];
+        $res = array(
 				'username' => $user['username'],
 				'roll' => $user['roll'],
-				't_score' => $user['t_score'],
-				'l_score' => $user['l_score'],
-				'level' => $user['level']
-			);
+				't_score' => $res['t_score'],
+				'l_score' => $res['l_score'],
+				'level' => $res['level']
+            );
 		JsonResponse::encode( $response, $res );
 	}
 
@@ -178,7 +182,7 @@ class Routes {
 		$response = $app->response;
 		$req = $app->request;
 		$user = $_SESSION['user'];
-		//$query = "SELECT t1.q_id,t2.name,t2.text,t2.img_name,t2.level from info t1 LEFT JOIN question t2 ON t1.q_id=t2.q_id WHERE q_id=? AND level=? AND u_id=?";
+		//$query = "SELECT t1.q_id,t2.name,t2.text,t2.img_name,t2.level,t2.score,t1.success from info t1 LEFT JOIN questions t2 ON t1.q_id=t2.q_id WHERE q_id=? AND u_id=?";
 		$query = "SELECT q_id,name,text,img_name,level,score from questions WHERE q_id IN (SELECT q_id from info WHERE q_id=? AND u_id=?)";
 		$db = DB::getInstance( 'Config' );
 		$db->query( $query, array( $qid, $user['u_id'] ) );
@@ -232,7 +236,6 @@ class Routes {
 				JsonResponse::encode( $response, array( 'success' => false ) );
 			}
 		} else {
-            var_dump($db->getErrorInfo());
             JsonResponse::encode( $response, array( 'error' => 'Question is not accessible' ) );
 		}
 	}

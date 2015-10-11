@@ -48,7 +48,11 @@
         var self = this,
             url = "userdata";
         this.init = function () {
-            return $http.get( url );
+            return $http.get( url ).then( function( response ) {    
+                    self.setDetails(response.data.username,response.data.level,response.data.t_score,response.data.l_score);
+                },function(errorResponse){
+                   //handle error 
+            });
         }
 
         /**
@@ -73,10 +77,12 @@
      * level
      * @param {Object} $http Service used to query questions from rest api
      */
-    function QuestionsList( $http ) {
+    function QuestionsList( $http,$user ) {
     	var self = this,
     		url = "questions",
     		urlAnswer = "questions/submit/";
+
+        this.initialized = false;
     	/**
     	 * questions object where key is questions id, and value is an object representing question
     	 * @type {Object}
@@ -91,6 +97,7 @@
     			for( var i in response.data ) {
     				var id = response.data[i];
     				self.questions[id.q_id] = {};
+                    self.initialized = true;
     			}
 	        }, function(errorResponse) {
 	            // Handle error case
@@ -112,6 +119,7 @@
     	 */
     	this.destroy = function() {
     		self.questions = {};
+            self.initialized = false;
     	}
 
     	/**
@@ -124,9 +132,13 @@
     		// question is is valid, submit an answer
     		if ( self.questions.hasOwnProperty( id ) === true ) {
     			var submitUrl = urlAnswer + 'q' + id;
-    			return $http.post( submitUrl, {answer:answer} ).then( function( response ) {
+                //var submitUrl = urlAnswer + '/' + id;
+                return $http.post( submitUrl, {answer:answer} ).then( function( response ) {
     				// increment score on success, or update score?
-    			}, function( errorResponse ) {
+    			    if ( response.data.success == true ){
+                        $user.init();
+                    }
+                }, function( errorResponse ) {
     				// Handle error
     			} );
     		} else {
@@ -144,17 +156,17 @@
 
 		this.init();
     }
-    myApplication.service( 'questionsList', [ '$http', QuestionsList ] );
+    myApplication.service( 'questionsList', [ '$http','User', QuestionsList ] );
 
     myApplication.controller( 'UserCtrl',['User','$scope','$http', function($user,$scope,$http){
 		var self = this;
-		var url = 'userdata';
 
 		this.init = function () {
 			$user.init().then( function( response ) {
-                $user.setDetails(response.data.username,response.data.level,response.data.t_score,response.data.l_score);
-                $scope.username = $user.username;
+                /*$scope.username = $user.username;
                 $scope.level = $user.level;
+                $scope.tscore = $user.tscore;*/
+                $scope.user = $user;
             },function(errorResponse){
 			} );
 		}
@@ -169,7 +181,7 @@
 	myApplication.controller( 'QuestionListCtrl',['questionsList', '$scope','$http', function(questionsList,$scope,$http){
 		var self = this,
 			url = 'questions';
-		$scope.questions = [];
+		$scope.questions = [];        
 
 		/**
 		 * Initialize the list of questions in this scope with their ids
@@ -177,16 +189,24 @@
 		 * @return
 		 */
 		this.init = function() {
-			questionsList.init()
-			// execute when request completed
-			.then( function(response) {
-				for( var q in questionsList.questions ) {
-					$scope.questions.push( q );
-				}
-	        }, function(errorResponse) {
-	            // Handle error case
-	        });
+            if(questionsList.initialized == false){
+            questionsList.init()
+            // execute when request completed
+            .then( function(response) { 
+                    self.initializeList();
+                }, function(errorResponse) {
+                // Handle error case
+            }); 
+            }else{
+                self.initializeList();
+            }
 		}
+
+        this.initializeList = function(){
+            for( var q in questionsList.questions ) { 
+                $scope.questions.push( q );
+            }
+        }
 
 		this.refresh = function() {
 			self.init();
@@ -195,8 +215,8 @@
 	    this.init();
 	} ] );
 
-	myApplication.controller( 'QuestionCtrl',['questionsList', '$scope','$http','$routeParams',
-			function($questionsList, $scope,$http,$routeParams){
+	myApplication.controller( 'QuestionCtrl',['questionsList','User', '$scope','$http','$routeParams',
+			function($questionsList, $user, $scope,$http,$routeParams){
 		var self = this;
 		var url = 'questions/' + $routeParams.id;
 
