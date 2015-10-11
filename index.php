@@ -20,6 +20,7 @@ $app->container->singleton('db', function () {
 $app->add( $auth );
 //$app = new \Slim\Slim();
 $app->get( '/', 'Routes:getProfile' );
+
 $app->get( '/login', 'Routes:getLogin')->name("login");
 
 $app->post( '/profile', 'Routes:postProfile')->name("profile");
@@ -31,6 +32,8 @@ $app->get( '/userdata', 'Routes:getProfileData');
 $app->get( '/questions', 'Routes:getQuestions');
 
 $app->get( '/questions/:id', 'Routes:getQuestion');
+
+$app->post( '/questions/submit/:id', 'Routes:postAnswer');
 
 $app->get( '/init', 'Routes:getInit');
 

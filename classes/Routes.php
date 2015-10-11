@@ -179,14 +179,61 @@ class Routes {
 		$req = $app->request;
 		$user = $_SESSION['user'];
 		//$query = "SELECT t1.q_id,t2.name,t2.text,t2.img_name,t2.level from info t1 LEFT JOIN question t2 ON t1.q_id=t2.q_id WHERE q_id=? AND level=? AND u_id=?";
-		$query = "SELECT q_id,name,text,img_name,level from questions WHERE q_id IN (SELECT q_id from info WHERE q_id=? AND u_id=?)";
+		$query = "SELECT q_id,name,text,img_name,level,score from questions WHERE q_id IN (SELECT q_id from info WHERE q_id=? AND u_id=?)";
 		$db = DB::getInstance( 'Config' );
 		$db->query( $query, array( $qid, $user['u_id'] ) );
 		if ( $db->getError() !== true && $db->getCount() > 0 ) {
 			$result = $db->getResult()[0];
-			JsonResponse::encode( $response, $result );
+			// reassign keys to hide actual database keys
+			$keys = array( "Q_id", "Q_name", "Q_text", "Q_img", "Q_level", "Q_score" );
+			$res = array();
+			$i = 0;
+			foreach( $result as $r=>$v ) {
+				$res[$keys[$i]] = $v;
+				$i++;
+			}
+			//var_dump($res);
+			JsonResponse::encode( $response, $res );
 		} else {
 			JsonResponse::encode( $response, array( 'error' => 'Question is not accessible' ) );
+		}
+	}
+
+	/**
+	 * Evaluates an answer to a question
+	 * @var int $id Id of the question to get
+	 * @return
+	 */
+	public static function postAnswer( $qid ) {
+		$qid = substr( $qid, 1 );
+		$app = Slim::getInstance();
+		$response = $app->response;
+        $req = $app->request();
+        $post = json_decode( $req->getBody(), true );
+        $user = $_SESSION['user'];
+        // select a question that has been assigned to the user and that is not
+        // already answered
+		$query = "SELECT ans,score from questions WHERE q_id IN (SELECT q_id from info WHERE q_id=? AND u_id=? AND success=0)";
+		$db = DB::getInstance( 'Config' );
+        $db->query( $query, array( $qid, $user['u_id'] ) );
+		if ( $db->getError() !== true && $db->getCount() > 0 ) {
+            $result = $db->getResult()[0];
+            //var_dump($post);
+            //$post['answer'] = $post['answer'];
+			if ( $result['ans'] === $post['answer'] ) {
+                // Run 2 update queries
+                // logic to limit attempts missing
+                $query1 = "UPDATE info set attempts=attempts+1,success=1 WHERE `q_id`=? AND `u_id`=?";
+                $query2 = "UPDATE user_data set l_score=l_score+?,t_score=t_score+? WHERE u_id=?";
+                $db->query( $query1, array( $qid, $user['u_id'] ) );
+                $db->query( $query2, array( $result['score'], $result['score'] , $user['u_id'] ) );
+				JsonResponse::encode( $response, array( 'success' => true ) );
+			} else {
+				JsonResponse::encode( $response, array( 'success' => false ) );
+			}
+		} else {
+            var_dump($db->getErrorInfo());
+            JsonResponse::encode( $response, array( 'error' => 'Question is not accessible' ) );
 		}
 	}
 

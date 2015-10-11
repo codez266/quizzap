@@ -1,6 +1,9 @@
-	<div class="questions" ng-controller="QuestionCtrl as question">
+	<div class="questions" ng-controller="QuestionCtrl as ques">
 	<a href="#/"><span class="back">Back</span></a>
-      <h2>{{question.name}}</h2>
-      <p>{{question.text}}</p>
-      <div class="qimage">{{question.img_name}}</div>
+      <h2>{{question.Q_name}}</h2>
+      <p>{{question.Q_text}}</p>
+      <div class="qimage">{{question.Q_img}}</div>
+      <input type="text" id="answer" ng-model="question.Q_ans"/>
+      <input type="button" value="try" id="submitans"
+      ng-click="ques.submitAnswer()"/>
     </div>
